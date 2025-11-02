@@ -1,5 +1,5 @@
 # added dependencies
-# matplotlib.pypot
+# matplotlib.pyplot
 # wandb
 # roboflow
 
