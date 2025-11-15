@@ -4,3 +4,25 @@ __pycache__/
 scripts/__pycache__/
 lightning_runs.zip
 lightning_runs/
+
+# Pyhton bytecode caches
+__pycache__/
+scripts/__pycache__/
+**/__pycache__/
+
+# Training Artifacts
+checkpoints/
+logs/
+wandb/
+lightning_runs/
+tensorboard/
+outputs/
+
+# Datasets inclusions
+Datasets_*/
+Datasets
+
+# Model weights
+*.ckpt
+*.pt
+*.pth
