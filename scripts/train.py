@@ -21,10 +21,13 @@ def train_armor_detector(
     base_channels=32,
     checkpoint_dir=CHECKPOINT_DIR,
     log_dir=LOG_DIR,
+    run_name=None,  # Add this parameter
 ):
     """Complete training pipeline with PyTorch Lightning"""
 
     pl.seed_everything(42, workers=True)
+    # added line for torch float32 matmul precision
+    torch.set_float32_matmul_precision('high')  # or 'medium' for slower performance
 
     os.makedirs(checkpoint_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
@@ -66,20 +69,23 @@ def train_armor_detector(
 
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
 
+    if run_name:
+        print(f"Initializing W&B with custom name: {run_name}")
+    
     wandb_logger = WandbLogger(
         project='armor-unet',
+        name=run_name,
         save_dir=log_dir,
         log_model=True,
         offline=False,
-    )
-    wandb_logger.experiment.config.update({
+        config={
         'batch_size': batch_size,
         'learning_rate': learning_rate,
         'base_channels': base_channels,
         'max_epochs': max_epochs,
         'data_root': data_root,
-    })
-    wandb_logger.watch(model, log='all', log_freq=50)
+        }
+    )
 
     trainer = pl.Trainer(
         max_epochs=max_epochs,
@@ -94,6 +100,7 @@ def train_armor_detector(
     print("\nStarting training...")
     print("="*80)
     trainer.fit(model, datamodule)
+    wandb_logger.watch(model, log='all', log_freq=50)
 
     print("\n" + "="*80)
     print("Testing best model...")
@@ -111,13 +118,20 @@ def train_armor_detector(
 
 
 if __name__ == '__main__':
-    # Minimal CLI via env vars; users can also edit defaults above
-    max_epochs_env = os.environ.get('MAX_EPOCHS')
-    if max_epochs_env is not None:
-        try:
-            me = int(max_epochs_env)
-        except ValueError:
-            me = 5
-        train_armor_detector(max_epochs=me)
-    else:
-        train_armor_detector()
+    import argparse
+
+    # Argument parsing instead of direct parameter setting via environment
+    parser = argparse.ArgumentParser(description='Train armor plate detector')
+    parser.add_argument('--run-name', type=str, default=None, help='Custom W&B run name')
+    parser.add_argument('--max-epochs', type=int, default=1, help='Maximum training epochs')
+    parser.add_argument('--batch-size', type=int, default=8, help='Batch size')
+    parser.add_argument('--learning-rate', type=float, default=1e-4, help='Learning rate')
+    
+    args = parser.parse_args()
+    
+    train_armor_detector(
+        run_name=args.run_name,
+        max_epochs=args.max_epochs,
+        batch_size=args.batch_size,
+        learning_rate=args.learning_rate,
+    )

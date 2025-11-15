@@ -32,6 +32,12 @@ mamba activate armor-unet
 conda activate armor-unet
 ```
 
+Install the package in editable mode:
+```
+pip install -e .
+```
+This installs armor_unet as a package, allowing import it from anywhere in the environment (e.g., from armor_unet.models import UNet). The -e flag changes to take effect immediately without reinstalling.
+
 To update an existing environment from the file:
 
 ```powershell
@@ -72,15 +78,6 @@ Example (PowerShell):
 $env:DATA_ROOT = 'C:\path\to\Dataset_Robomaster-1'
 $env:CHECKPOINT_DIR = 'checkpoints'
 $env:LOG_DIR = 'logs'
-python train.py
-```
-
-Bash example:
-
-```bash
-export DATA_ROOT=/path/to/Dataset_Robomaster-1
-export CHECKPOINT_DIR=checkpoints
-export LOG_DIR=logs
 python train.py
 ```
 

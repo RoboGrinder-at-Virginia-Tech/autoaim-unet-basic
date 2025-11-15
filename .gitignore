@@ -19,10 +19,15 @@ tensorboard/
 outputs/
 
 # Datasets inclusions
+Dataset_Robomaster-1/
 Datasets_*/
-Datasets
 
 # Model weights
 *.ckpt
 *.pt
 *.pth
+
+# setup.py build
+armor_unet.egg-info/
+
+
