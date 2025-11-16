@@ -1,3 +1,6 @@
+# Known Issue
+When running a training loop with a model size of "small" and a "batch-size" of 4 or larger, their is an explicit cuDNN error that is caused. This raises the "illegal CUDA operation" flag. I am further investigating a fix for this issue as it may be graphics memory dependent.
+
 # Armor U-Net (autoaim-unet-basic)
 
 Small U-Net segmentation training using PyTorch Lightning. This repository provides a compact training pipeline for armor-plate segmentation. The core code is intentionally lightweight and does not depend on Ray or other heavy HPO frameworks.
