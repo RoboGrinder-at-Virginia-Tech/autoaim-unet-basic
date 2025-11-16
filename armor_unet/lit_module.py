@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
-from .models import SmallUNet
+from .models import UNet
 
 
 def dice_coefficient(pred, target, smooth=1e-6):
@@ -21,11 +21,18 @@ class ArmorUNet(pl.LightningModule):
     """PyTorch Lightning module for armor plate detection"""
 
     def __init__(self, learning_rate=1e-4, weight_decay=1e-5, base_channels=32,
-                 loss_name: str = 'bce', loss_params: dict | None = None):
+                model_name='small', loss_name: str = 'bce', loss_params: dict | None = None):
         super().__init__()
         self.save_hyperparameters()
 
-        self.model = SmallUNet(in_channels=3, out_channels=1, base_channels=base_channels)
+        # added import statement for models.py
+        from .models import get_model
+        self.model = get_model(
+            model_name=model_name,
+            in_channels=3,
+            out_channels=1,
+            base_channels=base_channels
+        )
 
         self.loss_name = loss_name
         self.loss_params = loss_params or {}
