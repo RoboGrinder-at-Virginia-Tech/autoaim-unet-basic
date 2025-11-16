@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torchvision.models import mobilenet_v2
 
 
 class DoubleConv(nn.Module):
@@ -86,6 +87,38 @@ class UNet(nn.Module):
         dec1 = self.dec1(dec1)
 
         return self.out(dec1)
+
+#  MobileNetV2 U-Net model for comparison
+class MobileNetUNet(nn.Module):
+    def __init__(self, num_classes=1):
+        super(MobileNetUNet, self).__init__()
+        
+        # Load the MobileNetV2 backbone
+        backbone = mobilenet_v2(pretrained=True).features
+        self.encoder = backbone
+        
+        # Decoder layers for upsampling
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(1280, 512, kernel_size=2, stride=2),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(64, 32, kernel_size=2, stride=2),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32, num_classes, kernel_size=1)  # Final layer for segmentation mask
+        )
+
+    def forward(self, x):
+        # Pass input through the encoder
+        x = self.encoder(x)
+        
+        # Pass the encoder output through the decoder
+        x = self.decoder(x)
+        return x
     
 # function to select model type from small-medium-large
 def get_model(model_name="small", in_channels=3, out_channels=1, base_channels=None):
@@ -102,7 +135,6 @@ def get_model(model_name="small", in_channels=3, out_channels=1, base_channels=N
     - UNet: An instance of the UNet model configured according to the specified size.
     """
     model_name = model_name.lower()
-
     if model_name == "small":
         bc = base_channels if base_channels is not None else 32
         return UNet(in_channels, out_channels, base_channels=bc)
@@ -112,5 +144,7 @@ def get_model(model_name="small", in_channels=3, out_channels=1, base_channels=N
     elif model_name == "large":
         bc = base_channels if base_channels is not None else 128
         return UNet(in_channels, out_channels, base_channels=bc)
+    elif model_name == "mobilenet":
+        return MobileNetUNet(num_classes=out_channels)
     else:
-        raise ValueError(f"Unknown model_name '{model_name}'. Choose from 'small', 'medium', 'large'.")
+        raise ValueError(f"Unknown model_name '{model_name}'. Choose from 'small', 'medium', 'large', 'mobilenet'.")
