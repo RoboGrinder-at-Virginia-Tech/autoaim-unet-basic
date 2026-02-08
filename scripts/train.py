@@ -18,7 +18,8 @@ def train_armor_detector(
     batch_size=8,
     max_epochs=1,
     learning_rate=1e-4,
-    base_channels=32,
+    model_name="small", # model size selection
+    base_channels=None, # allows for custom base channels
     checkpoint_dir=CHECKPOINT_DIR,
     log_dir=LOG_DIR,
     run_name=None,  # Add this parameter
@@ -46,6 +47,7 @@ def train_armor_detector(
     print("Creating model...")
     model = ArmorUNet(
         learning_rate=learning_rate,
+        model_name=model_name, # pass model_name to lit_module
         base_channels=base_channels,
     )
 
@@ -79,6 +81,7 @@ def train_armor_detector(
         log_model=True,
         offline=False,
         config={
+        'model_name': model_name, # model size selection
         'batch_size': batch_size,
         'learning_rate': learning_rate,
         'base_channels': base_channels,
@@ -122,14 +125,18 @@ if __name__ == '__main__':
 
     # Argument parsing instead of direct parameter setting via environment
     parser = argparse.ArgumentParser(description='Train armor plate detector')
-    parser.add_argument('--run-name', type=str, default=None, help='Custom W&B run name')
-    parser.add_argument('--max-epochs', type=int, default=1, help='Maximum training epochs')
+    parser.add_argument('--model', type=str, default='small', help='Model size selection') 
+    parser.add_argument('--data-root', type=str, default=DATA_ROOT, help='Path to dataset root')
+    parser.add_argument('--run-name', type=str, default=None, help='Custom W&B run name') 
+    parser.add_argument('--max-epochs', type=int, default=1, help='Maximum training epochs') 
     parser.add_argument('--batch-size', type=int, default=8, help='Batch size')
-    parser.add_argument('--learning-rate', type=float, default=1e-4, help='Learning rate')
+    parser.add_argument('--learning-rate', type=float, default=1e-4, help='Learning rate') 
     
     args = parser.parse_args()
     
     train_armor_detector(
+        model_name=args.model,
+        data_root=args.data_root,
         run_name=args.run_name,
         max_epochs=args.max_epochs,
         batch_size=args.batch_size,

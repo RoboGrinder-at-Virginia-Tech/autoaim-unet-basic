@@ -14,5 +14,6 @@ setup(
         "matplotlib",
         "wandb>=0.16",
         "roboflow",
+        "ray[tune]",
     ],
 )
