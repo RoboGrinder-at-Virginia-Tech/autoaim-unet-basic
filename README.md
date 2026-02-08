@@ -21,7 +21,7 @@ Small U-Net segmentation training using PyTorch Lightning. This repository provi
 
 Create the environment using the included `environment.yml`:
 
-```powershell
+```
 mamba env create -f environment.yml
 # or with conda:
 conda env create -f environment.yml
@@ -29,7 +29,7 @@ conda env create -f environment.yml
 
 Activate it:
 
-```powershell
+```
 mamba activate armor-unet
 # or:
 conda activate armor-unet
@@ -43,13 +43,13 @@ This installs armor_unet as a package, allowing import it from anywhere in the e
 
 To update an existing environment from the file:
 
-```powershell
+```
 conda env update -n armor-unet -f environment.yml --prune
 ```
 
 ## Alternative: pip + venv
 
-```powershell
+```
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1   # PowerShell
 pip install -r requirements.txt
@@ -185,13 +185,3 @@ scripts/             # optional helpers (e.g., tuning templates)
 notebooks/           # example notebooks
 logs/                # runtime logs and checkpoints
 ```
-
-## Development for future improvements
-
-- Keep heavy external tooling (Ray, custom HPO) isolated in `scripts/` so the main training code remains lightweight.
-- If you want a Ray Tune template, add it as a separate script that calls the existing training functions.
-
-## Troubleshooting
-
-- If CUDA is not detected, ensure your PyTorch build matches your system CUDA runtime or use the conda `pytorch-cuda` package in `environment.yml`.
-- If package installation fails via conda, the `pip:` block in `environment.yml` provides a fallback.

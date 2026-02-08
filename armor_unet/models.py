@@ -1,6 +1,11 @@
 import torch
 import torch.nn as nn
 from torchvision.models import mobilenet_v2
+from torchvision.models.segmentation import (
+    deeplabv3_resnet50,
+    fcn_resnet50,
+    lraspp_mobilenet_v3_large,
+)
 
 
 class DoubleConv(nn.Module):
@@ -120,6 +125,51 @@ class MobileNetUNet(nn.Module):
         x = self.decoder(x)
         return x
     
+
+class TorchVisionAdapter(nn.Module):
+    """Adapter for TorchVision segmentation models to match the project API"""
+    def __init__(self, model_name, in_channels=3, out_channels=1):
+        super().__init__()
+        
+        # Handle input channels if not RGB (3 channels)
+        if in_channels != 3:
+            self.input_adapter = nn.Conv2d(in_channels, 3, kernel_size=1)
+        else:
+            self.input_adapter = nn.Identity()
+
+        if model_name == 'deeplabv3':
+            # DeepLabV3 with ResNet50 backbone
+            self.model = deeplabv3_resnet50(pretrained=True)
+            # Replace the classifier head (DeepLabHead)
+            # The last layer in DeepLabHead is classifier[4]
+            self.model.classifier[4] = nn.Conv2d(256, out_channels, kernel_size=1)
+            self.model.aux_classifier = None
+            
+        elif model_name == 'fcn':
+            # FCN with ResNet50 backbone
+            self.model = fcn_resnet50(pretrained=True)
+            # Replace the classifier head (FCNHead)
+            # The last layer in FCNHead is classifier[4]
+            self.model.classifier[4] = nn.Conv2d(512, out_channels, kernel_size=1)
+            self.model.aux_classifier = None
+            
+        elif model_name == 'lraspp':
+            # LRASPP with MobileNetV3-Large backbone (High efficiency)
+            self.model = lraspp_mobilenet_v3_large(pretrained=True)
+            # Replace the classifier head (LRASPPHead)
+            # The projection layer is 'project'
+            self.model.classifier.project = nn.Conv2d(128, out_channels, kernel_size=1)
+            self.model.aux_classifier = None
+            
+        else:
+            raise ValueError(f"Unknown torchvision model: {model_name}")
+
+    def forward(self, x):
+        x = self.input_adapter(x)
+        # Torchvision models return an OrderedDict {'out': tensor, 'aux': tensor}
+        return self.model(x)['out']
+
+
 # function to select model type from small-medium-large
 def get_model(model_name="small", in_channels=3, out_channels=1, base_channels=None):
     """
@@ -127,6 +177,7 @@ def get_model(model_name="small", in_channels=3, out_channels=1, base_channels=N
 
     Parameters:
     - model_name (str): One of "small", "medium", or "large" to specify the model size.
+    - model_name (str): "small", "medium", "large", "mobilenet", "deeplabv3", "fcn", "lraspp".
     - in_channels (int): Number of input channels.
     - out_channels (int): Number of output channels.
     - base_channels (int or None): Base number of channels for the U-Net. If None, defaults are used based on model size.
@@ -146,5 +197,8 @@ def get_model(model_name="small", in_channels=3, out_channels=1, base_channels=N
         return UNet(in_channels, out_channels, base_channels=bc)
     elif model_name == "mobilenet":
         return MobileNetUNet(num_classes=out_channels)
+    elif model_name in ['deeplabv3', 'fcn', 'lraspp']:
+        return TorchVisionAdapter(model_name, in_channels, out_channels)
     else:
         raise ValueError(f"Unknown model_name '{model_name}'. Choose from 'small', 'medium', 'large', 'mobilenet'.")
+        raise ValueError(f"Unknown model_name '{model_name}'.")

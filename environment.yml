@@ -7,14 +7,14 @@ channels:
 dependencies:
   - python=3.10
   - pip
-  - pytorch>=2.1
-  - torchvision>=0.16
-  - pytorch-cuda=12.1  # comment out if using CPU only
-  - cudatoolkit  # fallback if pytorch-cuda not available
   - numpy
   - pillow
   - matplotlib
   - pip:
+      - --pre
+      - --extra-index-url https://download.pytorch.org/whl/nightly/cu128
+      - torch
+      - torchvision
       - pytorch-lightning>=2.2
       - albumentations>=1.3
       - wandb>=0.16
