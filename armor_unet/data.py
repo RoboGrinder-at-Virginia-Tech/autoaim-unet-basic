@@ -101,7 +101,7 @@ class ArmorDataModule(pl.LightningDataModule):
             shuffle=True,
             num_workers=self.num_workers,
             pin_memory=True,
-            persistent_workers=True
+            persistent_workers=self.num_workers > 0
         )
 
     def val_dataloader(self):
@@ -111,7 +111,7 @@ class ArmorDataModule(pl.LightningDataModule):
             shuffle=False,
             num_workers=self.num_workers,
             pin_memory=True,
-            persistent_workers=True
+            persistent_workers=self.num_workers > 0
         )
 
     def test_dataloader(self):
@@ -121,5 +121,5 @@ class ArmorDataModule(pl.LightningDataModule):
             shuffle=False,
             num_workers=self.num_workers,
             pin_memory=True,
-            persistent_workers=True
+            persistent_workers=self.num_workers > 0
         )

@@ -156,9 +156,9 @@ class TorchVisionAdapter(nn.Module):
         elif model_name == 'lraspp':
             # LRASPP with MobileNetV3-Large backbone (High efficiency)
             self.model = lraspp_mobilenet_v3_large(pretrained=True)
-            # Replace the classifier head (LRASPPHead)
-            # The projection layer is 'project'
-            self.model.classifier.project = nn.Conv2d(128, out_channels, kernel_size=1)
+            # LRASPPHead has two classifiers (low and high) that need to be replaced
+            self.model.classifier.low_classifier = nn.Conv2d(40, out_channels, kernel_size=1)
+            self.model.classifier.high_classifier = nn.Conv2d(128, out_channels, kernel_size=1)
             self.model.aux_classifier = None
             
         else:
@@ -176,7 +176,6 @@ def get_model(model_name="small", in_channels=3, out_channels=1, base_channels=N
     Select and return a U-Net model based on the specified size.
 
     Parameters:
-    - model_name (str): One of "small", "medium", or "large" to specify the model size.
     - model_name (str): "small", "medium", "large", "mobilenet", "deeplabv3", "fcn", "lraspp".
     - in_channels (int): Number of input channels.
     - out_channels (int): Number of output channels.
@@ -200,5 +199,4 @@ def get_model(model_name="small", in_channels=3, out_channels=1, base_channels=N
     elif model_name in ['deeplabv3', 'fcn', 'lraspp']:
         return TorchVisionAdapter(model_name, in_channels, out_channels)
     else:
-        raise ValueError(f"Unknown model_name '{model_name}'. Choose from 'small', 'medium', 'large', 'mobilenet'.")
         raise ValueError(f"Unknown model_name '{model_name}'.")

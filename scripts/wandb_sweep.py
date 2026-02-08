@@ -1,10 +1,14 @@
 """
 scripts/wandb_sweep.py — Hyperparameter tuning with Weights & Biases Sweeps.
-Tunes all four model architectures (small, medium, large, mobilenet) on GPU only.
+Tunes all model architectures (UNets, MobileNet, TorchVision) on GPU only.
 """
 import os
 import sys
 import argparse
+import warnings
+
+# Fix for OpenMP runtime conflict (common on Windows)
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 import wandb
 import torch
@@ -16,8 +20,16 @@ from pytorch_lightning.callbacks import (
     ModelCheckpoint,
 )
 
+warnings.filterwarnings("ignore", message="triton not found")
+
+# Add project root to sys.path to allow importing armor_unet without installation
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from armor_unet.data import ArmorDataModule
 from armor_unet.lit_module import ArmorUNet
+
+# Suppress Triton warning on Windows
+warnings.filterwarnings("ignore", message="triton not found")
 
 
 def check_cuda():
@@ -50,15 +62,24 @@ def train_sweep(args):
     pl.seed_everything(42, workers=True)
     torch.set_float32_matmul_precision('high')
     
+    # Windows often crashes with multiprocessing in DataLoaders
+    # Force num_workers=1 on Windows to ensure stability
+    num_workers = cfg.get("num_workers", 2)
+    if os.name == 'nt':
+        num_workers = 1
+
     # Initialize data module
     datamodule = ArmorDataModule(
         data_root=args.data_root,
         batch_size=cfg.batch_size,
-        num_workers=cfg.get("num_workers", 2),
+        num_workers=num_workers,
     )
     
-    # Determine base_channels (not applicable for mobilenet)
-    base_channels = None if cfg.model_name == "mobilenet" else cfg.base_channels
+    # Determine base_channels (not applicable for mobilenet or torchvision models)
+    if cfg.model_name in ["mobilenet", "deeplabv3", "fcn", "lraspp"]:
+        base_channels = None
+    else:
+        base_channels = cfg.base_channels
     
     # Initialize Lightning module
     model = ArmorUNet(
@@ -206,7 +227,7 @@ def main():
         "parameters": {
             # Model architecture
             "model_name": {
-                "values": ["small", "medium", "large", "mobilenet"]
+                "values": ["small", "medium", "large", "mobilenet", "deeplabv3", "fcn", "lraspp"]
             },
             
             # Optimizer hyperparameters
